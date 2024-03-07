@@ -1060,12 +1060,13 @@ def get_image_url(imgName):
         image_url = None
         for file in results.get('files', []):
             image_url = file.get('webContentLink')
+            print(image_url)
             if "&export=download" in image_url:
                  image_url = image_url.replace("&export=download", "")
             
             image_url = image_url.replace("uc", "thumbnail")
             break
-
+        print(image_url)
         return image_url
     except HttpError as e:
         print(f"Google Drive API error: {e}")
@@ -1080,8 +1081,20 @@ def upload_image_drv(imgFile):
     drive_service = create_drive_service()
     temp_dir = tempfile.TemporaryDirectory()
     temp_file = imgFile
+    secure_filename1 = secure_filename(imgFile.filename)
+    file_extension = os.path.splitext(secure_filename1)[1].lower()
     temp_path = os.path.join(temp_dir.name, temp_file.filename)
     temp_file.save(temp_path)
+
+     # Determine MIME type from the file extension
+    if file_extension in ['.jpg', '.jpeg']:
+        mimetype = 'image/jpeg'
+    elif file_extension == '.png':
+        mimetype = 'image/png'
+    elif file_extension == '.gif':
+        mimetype = 'image/gif'
+    else:
+        mimetype = 'application/octet-stream'  # Default binary file MIME type or handle as needed
 
     file_metadata = {
         'name': temp_file.filename,
@@ -1090,8 +1103,9 @@ def upload_image_drv(imgFile):
 
     media = MediaFileUpload(
         temp_path,
-        mimetype='image/jpg'
+        mimetype=mimetype
     )
+    print(mimetype)
     try:
         uploaded_file = drive_service.files().create(
             body=file_metadata,
